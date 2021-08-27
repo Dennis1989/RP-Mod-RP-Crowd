@@ -40,7 +40,7 @@ Here is an example of the final contents of the folder:
 
 Our datasets are hosted on [zenodo](https://zenodo.org/) and can be retrieved here:
 
-[https://zenodo.org/record/5242916](https://zenodo.org/record/5242916)
+[https://zenodo.org/record/5242915](https://zenodo.org/record/5242915)
 
 Currently, access is granted on an *individual basis* and has to be requested. We will make the dataset accessible to the public in the future.
 
@@ -95,7 +95,7 @@ The development version can be installed through:
 ```bash
 git clone https://github.com/scikit-optimize/scikit-optimize.git
 cd scikit-optimize
-pip install -e.
+pip install -e .
 ```
 
 Please also make sure to download the following german corpus for preprocessing:

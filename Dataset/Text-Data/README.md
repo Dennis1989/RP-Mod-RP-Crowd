@@ -1,6 +1,6 @@
 # PLEASE PLACE THE RP-MOD-CROWD DATASETS IN THIS FOLDER!
 
-This is the place where the datasets that can be retrieved from [https://zenodo.org/record/5242916](https://zenodo.org/record/5242916) have to be placed.
+This is the place where the datasets that can be retrieved from [https://zenodo.org/record/5242915](https://zenodo.org/record/5242915) have to be placed.
 
 # The `One Million Posts Corpus` Dataset
 

@@ -1,0 +1,15 @@
+numpy
+sklearn
+pandas
+spacy
+tqdm
+nltk
+matplotlib
+transformers
+jupyter
+openpyxl
+seaborn
+tikzplotlib
+Krippendorff
+Xlrd
+fasttext

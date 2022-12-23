@@ -40,35 +40,67 @@ class InputDistributor(nn.Module):
         else:
             return x_r
 
-    
-class SelfMultiHeadAttention(nn.Module):
-    def __init__(self, *args, input_shape='LNE', operator=torch.add,**kwargs):
-        super().__init__()
-        self.mha = nn.MultiheadAttention(*args, **kwargs)
-        self.operator = operator
         
-        if input_shape not in ['LNE', 'NLE', 'NEL']:
-            raise ValueError('input_shape must be in [LNE, NLE, NEL],')
+class SelfAttentionPointCloud(nn.Module):
+    def __init__(self, input_dim, embed_dim, kv_dim=None, dropout=0.1, bias=True, add_bias_kv=False):
+        super().__init__()
+        kv_dim = embed_dim if kv_dim is None else kv_dim
+        self.dropout = dropout
+        
+        self.q_proj = nn.Linear(input_dim, embed_dim, bias=bias)
+        self.k_proj = nn.Linear(input_dim, kv_dim, bias=add_bias_kv)
+        self.v_proj = nn.Linear(input_dim, kv_dim, bias=add_bias_kv)
+        
+        self.x_proj = nn.Linear(input_dim, embed_dim, bias=bias) if input_dim != embed_dim else None
             
-        if input_shape == 'NLE':
-            self.permute_shape_in, self.permute_shape_out = (1,0,2), (1,0,2)
-        elif input_shape == 'NEL':
-            self.permute_shape_in, self.permute_shape_out = (2,0,1), (1,2,0)
-        else:
-            self.permute_shape_in, self.permute_shape_out = (0,1,2), (0,1,2)
+        self.out_proj = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim),
+            nn.LayerNorm(embed_dim),
+            nn.ReLU(),
+        )
+        self._reset_parameters()
+        
+    def _reset_parameters(self):
+        self.q_proj.reset_parameters()
+        self.k_proj.reset_parameters()
+        self.v_proj.reset_parameters()
+        
+        for layer in self.out_proj:
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
+        
     
-    def forward(self, x):
-        x_r = x.permute(*self.permute_shape_in)
-        x_r = self.mha(x_r, x_r, x_r)[0]
-        x_r = x_r.permute(*self.permute_shape_out)
-        return self.operator(x, x_r)
+    def forward(self, x, attn_mask=None):
+        # Avoid dropout in model.eval() mode!
+        dropout = self.dropout if self.training else 0.
+        
+        # convert mask to float (copied from PyTorch repository)
+        if attn_mask is not None and attn_mask.dtype == torch.bool:
+            new_attn_mask = torch.zeros_like(attn_mask, dtype=torch.float)
+            new_attn_mask.masked_fill_(attn_mask, float("-inf"))
+            attn_mask = new_attn_mask
+        
+        # Execute input projection and receive q, k, v
+        q = self.q_proj(x)
+        k = self.k_proj(x)
+        v = self.v_proj(x)
+        x = self.x_proj(x) if self.x_proj is not None else x
+        
+        # Execute Scaled Dot Attention
+        attn_output, _ = F._scaled_dot_product_attention(q, k, v, attn_mask, dropout)
+        
+        # Execute output projection with (x - attention)
+        attn_output = self.out_proj(x - attn_output)
+        
+        # Add x and attention
+        return (x + attn_output)
     
 
 class SequentialCat(nn.Module):
     def __init__(self, *layers, dim=1, concat_input=False):
         super().__init__()
         self.layers = nn.ModuleList(layers)
-        self.dim = 1
+        self.dim = dim
         self.concat_input = concat_input
     
     def forward(self, x):

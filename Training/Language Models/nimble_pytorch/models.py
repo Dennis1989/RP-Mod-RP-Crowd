@@ -456,7 +456,7 @@ class NimbleSequential(NimbleModule):
             X, y, batch_kwargs = batch, None, {}
 
         with ampautocast(enabled=self.use_mixed_precision):
-            loss = self._valid_step(X, y, batch_kwargs, is_evald, **kwargs)
+            loss = self._valid_step(X, y, batch_kwargs, is_evald=is_evald, **kwargs)
 
         if not isinstance(loss, dict):
             loss = {'loss': loss}

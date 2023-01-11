@@ -11,7 +11,12 @@ def simple_collate_fn(batch):
         else:
             values = torch.as_tensor(values)
         out[key] = values
-    return out
+    if 'ids' in out:
+        ids = out['ids']
+        del out['ids']
+        return out, None, {'ids': ids}
+    else:
+        return out
 
 
 class TextDatasetFineTuning(torch.utils.data.Dataset):
@@ -68,6 +73,7 @@ class TextDatasetFineTuning(torch.utils.data.Dataset):
                 inputs['labels'] = inputs['labels'].fill_(-100)
         else:
             inputs['labels'] = label
+        inputs['ids'] = random.randint(1., 9.)
         return inputs
 
     def __len__(self):
